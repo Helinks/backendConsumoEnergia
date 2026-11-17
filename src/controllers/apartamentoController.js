@@ -2,7 +2,7 @@ const pool = require("../config/database")
 const { responderError } = require("../utils/dbError")
 
 const consultarApartamentos = async (req,res) =>{
-    const consultarQuery = "SELECT * FROM apartamento a INNER JOIN responsable r ON a.Responsable_idResponsable = r.idResponsable ORDER BY a.idApartamento ASC";
+    const consultarQuery = "SELECT * FROM apartamento a INNER JOIN responsable r ON a.Responsable_idResponsable = r.idResponsable WHERE (a.borrado = 0 OR a.borrado IS NULL) ORDER BY a.idApartamento ASC";
 
     try{
         const [result]= await pool.query(consultarQuery);
@@ -19,12 +19,15 @@ const consultarApartamentosSinResponsable = async (req,res) =>{
                r.idResponsable, r.nombres, r.idRol, r.Estado_idEstado,
                r.nombres AS responsable_nombre,
             (SELECT c.kw FROM consumo c
+             JOIN recibo r2 ON c.Recibo_idRecibo = r2.idRecibo
              WHERE c.Apartamento_idApartamento = a.idApartamento
+               AND (r2.borrado = 0 OR r2.borrado IS NULL)
              ORDER BY c.Recibo_idRecibo DESC
              LIMIT 1) AS lecturaAnterior
         FROM apartamento a
         INNER JOIN responsable r ON a.Responsable_idResponsable = r.idResponsable
         WHERE a.Responsable_idResponsable > 0
+          AND (a.borrado = 0 OR a.borrado IS NULL)
         ORDER BY a.idApartamento ASC
     `;
 
@@ -48,7 +51,7 @@ const crearApartamento = async (req, res) => {
 
     const fechaCreacion = new Date();
     const fechaActualizacion = new Date();
-    const insertQuery = 'INSERT INTO apartamento(Responsable_idResponsable, descripcion, fechaCreacion, fechaActualizacion) VALUES (?,?,?,?); ';
+    const insertQuery = 'INSERT INTO apartamento(Responsable_idResponsable, descripcion, fechaCreacion, fechaActualizacion, borrado) VALUES (?,?,?,?,0); ';
 
     const values = [
         idResponsable,
@@ -100,21 +103,26 @@ const editarApartamento = async (req, res) => {
 };
 
 const borrarApartamento = async (req, res) => {
-    const {id} = req.body;
+    const id = req.params.id || req.body.id;
 
     if(!id){
         return res.status(400).json({error: "Faltan datos"})
     }
-    const deleteQuery = 'DELETE FROM apartamento WHERE idApartamento = ?';
+    const fechaActualizacion = new Date();
+    const updateQuery = 'UPDATE apartamento SET borrado = 1, fechaActualizacion = ? WHERE idApartamento = ?';
     const values = [
+        fechaActualizacion,
         id,
-    ]
+    ];
     try {
-        const [result] = await pool.query(deleteQuery, values)
-        res.status(201).json({
+        const [result] = await pool.query(updateQuery, values);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Apartamento no encontrado.' });
+        }
+        res.status(200).json({
             message: 'Apartamento eliminado correctamente',
             reciboId: id
-        })
+        });
     } catch (error) {
         return responderError(res, error, 'Error al borrar el apartamento.');
     }

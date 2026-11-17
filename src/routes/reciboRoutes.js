@@ -9,9 +9,9 @@ router.get('/consumos/:id', reciboController.consultarConsumosDeRecibo);
 
 router.post ('/crear/', reciboController.crearRecibo, consumoController.crearConsumo);
 
-router.put('/editar/:id', reciboController.editarRecibo);
-router.put('/editar-consumo/:id', reciboController.editarConsumo);
+router.put(['/editar/:id', '/editar'], reciboController.editarRecibo);
+router.put(['/editar-consumo/:id', '/editar-consumo'], reciboController.editarConsumo);
 
-router.delete('/borrar/:id', reciboController.borrarRecibo);
+router.delete(['/borrar/:id', '/borrar'], reciboController.borrarRecibo);
 
 module.exports = router;

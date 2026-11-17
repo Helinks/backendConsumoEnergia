@@ -6,6 +6,6 @@ router.get('/', apartamentoController.consultarApartamentos);
 router.get('/calcular', apartamentoController.consultarApartamentosSinResponsable);
 router.post('/crear', apartamentoController.crearApartamento);
 router.put('/actualizar', apartamentoController.editarApartamento);
-router.delete('/borrar', apartamentoController.borrarApartamento);
+router.delete(['/borrar/:id', '/borrar'], apartamentoController.borrarApartamento);
 
 module.exports = router;

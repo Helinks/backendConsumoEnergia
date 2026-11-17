@@ -32,6 +32,17 @@ const crearConsumo = async (req, res) => {
         }
 
         const sumaTenantsKw = tenantKwValues.reduce((sum, t) => sum + t.kwConsumido, 0);
+
+        if (sumaTenantsKw > kwConsumidos) {
+            await connection.rollback();
+            return res.status(400).json({
+                error: `La suma del consumo de los inquilinos (${sumaTenantsKw} KW) no puede superar el total de KW consumidos en el recibo general (${kwConsumidos} KW). Verifique las lecturas de los contadores.`
+            });
+        }
+
+        const duenosCount = apartments.filter(a => a.idRol !== 2).length || 1;
+        const kwRestante = Math.max(0, kwConsumidos - sumaTenantsKw);
+        const kwPorDueno = kwRestante / duenosCount;
         let tenantIdx = 0;
 
         const insertPromises = [];
@@ -45,7 +56,7 @@ const crearConsumo = async (req, res) => {
                 kwConsumido = t.kwConsumido;
                 kwParaDb = t.lecturaActual;
             } else {
-                kwConsumido = Math.max(0, kwConsumidos - sumaTenantsKw);
+                kwConsumido = kwPorDueno;
                 kwParaDb = kwConsumido;
             }
 

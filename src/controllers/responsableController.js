@@ -74,31 +74,9 @@ const editarResponsable = async (req, res) => {
     }
 };
 
-const borrarResponsable = async (req, res) => {
-    const { id } = req.body;
-
-    if (!id) {
-        return res.status(400).json({ error: "Faltan datos" })
-    }
-    const deleteQuery = 'DELETE FROM responsable WHERE idResponsable = ?';
-    const values = [
-        id,
-    ]
-    try {
-        const [result] = await pool.query(deleteQuery, values)
-        res.status(201).json({
-            message: 'Responsable eliminado correctamente',
-            reciboId: id
-        })
-    } catch (error) {
-        return responderError(res, error, 'Error al borrar el responsable.');
-    }
-
-};
 
 module.exports = {
     consultarResponsables,
     crearResponsable,
     editarResponsable,
-    borrarResponsable,
 };
